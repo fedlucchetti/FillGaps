@@ -1,0 +1,9 @@
+matplotlib
+nibabel
+PyQt5
+pyqtgraph
+tqdm
+scipy
+statsmodels
+PyOpenGL
+monai
