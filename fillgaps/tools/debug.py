@@ -1,6 +1,6 @@
 import shutil
 
-class MessagePrinter:
+class Debug:
     COLORS = {
         "SUCCESS": "\033[92m",  # Green
         "ERROR": "\033[91m",    # Red
@@ -47,7 +47,7 @@ class MessagePrinter:
             print("\n" + f" #" * columns," \033[0m")
 
 if __name__=="__main__":
-    printer = MessagePrinter()
+    printer = Debug()
     value = 23
     message="is the answer to the ultimate question of the Universe."
     printer.separator()

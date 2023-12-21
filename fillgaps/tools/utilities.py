@@ -3,12 +3,13 @@ import matplotlib as plt
 import math, sys, os, re
 import nibabel as nib
 from tqdm import tqdm
+from natsort import natsorted
 
 
-from fillgaps.tools.messages import MessagePrinter
+from fillgaps.tools.debug import Debug
 
 
-msgprint=MessagePrinter()
+debug=Debug()
 
 def find_root_path():
     current_path = os.path.abspath(__file__)
@@ -21,36 +22,52 @@ def find_root_path():
 
 class Utilities(object):
     def __init__(self):
-        self.ROOTPATH = find_root_path()
-        self.DATAPATH = os.path.join(self.ROOTPATH,"Data")
-        self.DEVPATH  = os.path.join(self.ROOTPATH,"Code")
+        self.ROOTPATH      = find_root_path()
+        self.DATAPATH      = os.path.join(self.ROOTPATH,"Data")
+        self.DEVPATH       = os.path.join(self.ROOTPATH,"Code")
+        self.DATARECONPATH = os.path.join(self.DATAPATH, "MRSI_reconstructed")
 
-    def list_unique_ids(self,file_types):
+    def list_unique_ids(self, file_types):
         unique_ids_info = {}
-        
-        dirpath = os.path.join(self.DATAPATH, "MRSI_reconstructed")
-
-        for root, dirs, files in os.walk(dirpath):
+        for root, dirs, files in os.walk(self.DATARECONPATH):
             for file in files:
                 if file.endswith('.nii'):
                     for file_type in file_types:
-                        if file.startswith(file_type):
-                            match = re.search(rf'{file_type}(\d+).nii', file)
+                        if file_type == "OrigRes":
+                            match = re.search(r'OrigRes_[\w+]+_conc([A-Za-z0-9]{4})\.nii', file)
+                            debug.info(match)
                             if match:
-                                id = int(match.group(1))
+                                id = match.group(1)
                                 if id not in unique_ids_info:
                                     unique_ids_info[id] = {ft: False for ft in file_types}
                                 unique_ids_info[id][file_type] = True
-                                break
-
+                        else:
+                            if file.startswith(file_type):
+                                match = re.search(rf'{file_type}(\d+).nii', file)
+                                if match:
+                                    id = int(match.group(1))
+                                    if id not in unique_ids_info:
+                                        unique_ids_info[id] = {ft: False for ft in file_types}
+                                    unique_ids_info[id][file_type] = True
+                                    break
         # Sort the keys and return the information
-        return {id: unique_ids_info[id] for id in sorted(unique_ids_info)}
+        return {id: unique_ids_info[id] for id in natsorted(unique_ids_info)}
 
+
+    def __list_unique_ids_orig(data):
+        pattern = re.compile(r'OrigRes_[\w+]+_conc([A-Za-z0-9]{4})\.nii')
+        unique_ids = set()
+
+        for line in data.split('\n'):
+            match = pattern.search(line)
+            if match:
+                unique_ids.add(match.group(1))
+
+        return sorted(unique_ids)
 
     def list_nii(self):
         nii_files = []
-        dirpath = os.path.join(self.DATAPATH,"MRSI_reconstructed")
-        for root, dirs, files in os.walk(dirpath):
+        for root, dirs, files in os.walk(self.DATARECONPATH):
             for file in files:
                 if file.endswith('.nii'):
                     nii_files.append(os.path.join(root, file))
@@ -58,21 +75,40 @@ class Utilities(object):
         return nii_files
 
 
-    def load_nii(self,file_type="Conc",id=1):
-        self.list_nii()
-            # Construct the filename pattern
-        filename_pattern = f"{file_type}{id:04d}.nii"
-        # msgprint.info("Looking for " + filename_pattern)
-        # Search for the file in the list
-        for file in self.nii_files:
-            if filename_pattern in file:
-                # msgprint.success("Extracting data from "+file)
-                data = nib.load(file)
-                break
+    def __load_orig(self,metabolic_str, fileid):
+        # script_dir = os.path.dirname(os.path.realpath(__file__))
+        script_dir = os.path.join(self.DATARECONPATH,"OrigRes")
+        target_pattern = f"OrigRes_{metabolic_str}_conc{fileid}.nii"
+        debug.info("Looking for",target_pattern,"in",script_dir)
+        for root, dirs, files in os.walk(script_dir):
+            for file in files:
+                if file == target_pattern:
+                    file_path = os.path.join(root, file)
+                    return nib.load(file_path)
+        return None
+
+    def load_nii(self,file_type="Conc",fileid=1,metabolic_str=None):
+        if file_type=="OrigRes":
+            if metabolic_str is None:
+                debug.error("load nii: empty metabolic_str")
+                return None
+            data = self.__load_orig(metabolic_str, fileid)
+            if data is None: debug.error("load nii: pattern not found")
+        else:
+            self.list_nii()
+                # Construct the filename pattern
+            filename_pattern = f"{file_type}{fileid:04d}.nii"
+            # debug.info("Looking for " + filename_pattern)
+            # Search for the file in the list
+            for file in self.nii_files:
+                if filename_pattern in file:
+                    # debug.success("Extracting data from "+file)
+                    data = nib.load(file)
+                    break
         return data.get_fdata(),data.header
     
     def load_nii_all(self,file_type="Conc"):
-        msgprint.info("Extracting all" + file_type +" data from ")
+        debug.info("Extracting all" + file_type +" data from ")
         pattern = re.compile(f"{file_type}(\\d+).nii")
         self.list_nii()
 
@@ -89,16 +125,16 @@ class Utilities(object):
             __data,__header = self.load_nii(file_type,i)
             data[i]=__data
             headers.append(__header)
-        msgprint.success("Done")
+        debug.success("Done")
         return data, headers
 
     def save_nii_file(self,file_type,fileid,tensor3D):
         nifti_img = nib.Nifti1Image(tensor3D.astype(np.float64), np.eye(4))
-        dirpath   = os.path.join(self.DATAPATH,"MRSI_reconstructed",file_type)
+        dirpath   = os.path.join(self.DATARECONPATH,file_type)
         os.makedirs(dirpath,exist_ok=True)
         outpath   = os.path.join(dirpath,f"{file_type}{fileid:04d}.nii") 
         nifti_img.to_filename(outpath)
-        msgprint.success("Saved to " + outpath)
+        debug.success("Saved to " + outpath)
 
 
     

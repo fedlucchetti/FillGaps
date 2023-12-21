@@ -5,8 +5,19 @@ import nibabel as nib
 
  
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSlider, QWidget, QVBoxLayout, QHBoxLayout
-from PyQt5.QtWidgets import QFileDialog, QPushButton, QStyle, QSpinBox
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QFileDialog, QPushButton, QStyle, QSpinBox, QSplitter
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtGui import QFont
+
+
+
+from PyQt5.QtWidgets import QTableWidget, QSlider, QTableWidgetItem
+from PyQt5.QtCore import Qt
+
+from vispy import app, scene
+from vispy.color import Colormap
+from vispy.visuals.transforms import STTransform
+
 
 
 from PyQt5.QtCore import Qt
@@ -16,10 +27,12 @@ from pyqtgraph import InfiniteLine
 from pyqtgraph import ImageView
 
 from fillgaps.tools.utilities import Utilities
+from fillgaps.tools.debug import Debug
 
 # from tools.ClickableIMG import ClickableImageView 
 
 utils = Utilities()
+debug = Debug()
 
 # DATAPATH = "/Users/flucchetti/Documents/Connectonome/Data/MRSI_reconstructed/Basic"
 
@@ -43,11 +56,13 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.DATAPATH = os.path.join(utils.DATAPATH,"MRSI_reconstructed")
-        self.file_types = ["Qmask", "Conc", "Basic", "Holes"]
+        self.file_types = ["Qmask", "Conc", "Basic", "Holes","OrigRes"]
+        self.metabolic_current = "Cr+PCr"
+        self.metabolics_labels = ["Cr", "Glx", "GPC", "Ins", "NAA"]  # Class attribute for labels
+
         self.selectedPixels = set()  # Keep track of selected pixels
-        print("Missing arguments... using default")
         # data = nib.load(os.path.join(self.DATAPATH,"Basic","Basic0001.nii")).get_fdata()
-        data, header = utils.load_nii(file_type="Basic",id=1)
+        data, header = utils.load_nii(file_type="Holes",fileid=1)
         self.unique_ids = utils.list_unique_ids(self.file_types)  # Assuming this method exists and returns a list of IDs
         # print(self.unique_ids)
         # print("data shape",data.shape)
@@ -60,17 +75,17 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         # Init positions for sldiers
-        init_pos = np.array([self.tensor3D_current.shape[0]/2,self.tensor3D_current.shape[1]/2,self.tensor3D_current.shape[2]/2]).astype(int)
+        self.init_pos = np.array([self.tensor3D_current.shape[0]/2,self.tensor3D_current.shape[1]/2,self.tensor3D_current.shape[2]/2]).astype(int)
 
         ##################### LHS Figure #####################
         self.imageView1 = pg.ImageView(self)
         self.imageView1.getImageItem().mousePressEvent = self.imageClicked
         self.slider1 = QSlider(Qt.Horizontal, self)
         self.slider1.setRange(0, self.tensor3D_current.shape[0] - 1)
-        self.slider1.setValue(init_pos[0])
+        self.slider1.setValue(self.init_pos[0])
         self.spinBox1 = QSpinBox(self)
         self.spinBox1.setRange(0, self.tensor3D_current.shape[0] - 1)
-        self.spinBox1.setValue(init_pos[0])
+        self.spinBox1.setValue(self.init_pos[0])
         self.spinBox1.setStyleSheet("QSpinBox { font-size: 36pt; text-align: center; }")
         self.spinBox1.setFixedWidth(self.spinBox1.sizeHint().width() + 20)  # Adjust widtg
          # Add  lines to the first image
@@ -85,10 +100,10 @@ class MainWindow(QMainWindow):
         self.imageView2 = pg.ImageView(self)
         self.slider2 = QSlider(Qt.Horizontal, self)
         self.slider2.setRange(0, self.tensor3D_current.shape[1] - 1)
-        self.slider2.setValue(init_pos[1])
+        self.slider2.setValue(self.init_pos[1])
         self.spinBox2 = QSpinBox(self)
         self.spinBox2.setRange(0, self.tensor3D_current.shape[1] - 1)
-        self.spinBox2.setValue(init_pos[1])
+        self.spinBox2.setValue(self.init_pos[1])
         self.spinBox2.setStyleSheet("QSpinBox { font-size: 36pt; text-align: center; }")
         self.spinBox2.setFixedWidth(self.spinBox2.sizeHint().width() + 20)  # Adjust width
         # Add  lines to the second image
@@ -103,10 +118,10 @@ class MainWindow(QMainWindow):
         self.imageView3 = pg.ImageView(self)
         self.slider3 = QSlider(Qt.Horizontal, self)
         self.slider3.setRange(0, self.tensor3D_current.shape[2] - 1)
-        self.slider3.setValue(init_pos[2])
+        self.slider3.setValue(self.init_pos[2])
         self.spinBox3 = QSpinBox(self)
         self.spinBox3.setRange(0, self.tensor3D_current.shape[2] - 1)
-        self.spinBox3.setValue(init_pos[2])
+        self.spinBox3.setValue(self.init_pos[2])
         self.spinBox3.setStyleSheet("QSpinBox { font-size: 36pt; text-align: center; }")
         self.spinBox3.setFixedWidth(self.spinBox2.sizeHint().width() + 20)  # Adjust width
         # Add  lines to the third image
@@ -126,6 +141,13 @@ class MainWindow(QMainWindow):
         self.idTable.cellClicked.connect(self.table_select)
         vLayoutTable.addWidget(self.idTable)
         
+        #################### 3D rendering ####################
+        vispy_canvas_widget = self.create_vispy_canvas()
+        #################### Metabolite SLider ####################
+        sliderMetaboliteLayout = self.create_metabolite_slider()
+        ####################  XYZ Plane Buttons ####################
+        buttonXYZPlaneLayout   = self.create_3D_plane_buttonss()
+        
 
         ##################### Connectors #####################
         self.slider1.valueChanged[int].connect(lambda value: self.updateFromSlider1(value))
@@ -135,14 +157,11 @@ class MainWindow(QMainWindow):
         self.slider3.valueChanged[int].connect(lambda value: self.updateFromSlider3(value))
         self.spinBox3.valueChanged[int].connect(self.updateFromSpinBox3)
 
-        # self.idTable.cellClicked.connect(self.table_select)
+        self.slider1.valueChanged.connect(self.on_slider_value_changed)
+        self.slider2.valueChanged.connect(self.on_slider_value_changed)
+        self.slider3.valueChanged.connect(self.on_slider_value_changed)
 
 
-
-        # vLayout3D = QVBoxLayout()
-        # glWidget = self.create_3d_plot(self.tensor3D_current)
-        # vLayout3D.addWidget(glWidget)
-        
         ##################### Layout ALL #####################
         vLayout1 = QVBoxLayout()
         vLayout1.addWidget(self.imageView1)
@@ -156,23 +175,59 @@ class MainWindow(QMainWindow):
         vLayout3.addWidget(self.imageView3)
         vLayout3.addWidget(self.slider3)
         vLayout3.addWidget(self.spinBox3)
+
+
+
+        # Horizontal layout for the group of vLayout1, vLayout2, vLayout3
         hLayoutMain = QHBoxLayout()
-        hLayoutMain.addLayout(vLayoutTable)
         hLayoutMain.addLayout(vLayout1)
         hLayoutMain.addLayout(vLayout2)
         hLayoutMain.addLayout(vLayout3)
-        vLayoutMain = QVBoxLayout()
-        vLayoutMain.addLayout(hLayoutMain)
-        # vLayoutMain.addLayout(vLayout3D)
+
+        # Widget for the horizontal layout
+        hLayoutWidget = QWidget()
+        hLayoutWidget.setLayout(hLayoutMain)
+
+        # Widget for the combined layout of slider and Vispy canvas
+        canvasSliderWidget = QWidget()
+        hLayoutCanvasSlider = QHBoxLayout(canvasSliderWidget)
+        hLayoutCanvasSlider.addLayout(sliderMetaboliteLayout)
+        hLayoutCanvasSlider.addLayout(buttonXYZPlaneLayout)
+        hLayoutCanvasSlider.addWidget(vispy_canvas_widget)
+
+
+        # Replace vispy_canvas_widget with the new horizontal layout in verticalSplitter
+        verticalSplitter = QSplitter(Qt.Vertical)
+        verticalSplitter.addWidget(hLayoutWidget)
+        verticalSplitter.addWidget(canvasSliderWidget)  # Add the combined layout widget
+
+
+
+
+        # Widget for plot layout
+        plotWidget = QWidget()
+        plotLayout = QVBoxLayout(plotWidget)
+        plotLayout.addWidget(verticalSplitter)
+
+        # Widget for the table layout
+        tableWidget = QWidget()
+        tableLayout = QVBoxLayout(tableWidget)
+        tableLayout.addLayout(vLayoutTable)
+
+        # Create a horizontal splitter and add the table and plot layouts
+        horizontalSplitter = QSplitter(Qt.Horizontal)
+        horizontalSplitter.addWidget(tableWidget)
+        horizontalSplitter.addWidget(plotWidget)
+
         # Set the main layout
-        widget = QWidget()
-        widget.setLayout(vLayoutMain)
-        self.setCentralWidget(widget)
+        mainWidget = QWidget()
+        mainWidgetLayout = QVBoxLayout(mainWidget)
+        mainWidgetLayout.addWidget(horizontalSplitter)
+        self.setCentralWidget(mainWidget)
 
-
-
-        self.plot3DWindow = Plot3DWindow(self.tensor3D_current)
-        self.plot3DWindow.show()
+        # self.plot3DWindow = Plot3DWindow(self.tensor3D_current)
+        # self.plot3DWindow.show()
+        
 
          ##################### First Update #####################
         self.hLine1.setPos(self.slider3.value())
@@ -181,9 +236,9 @@ class MainWindow(QMainWindow):
         self.vLine2.setPos(self.slider1.value())
         self.hLine3.setPos(self.slider2.value())
         self.vLine3.setPos(self.slider1.value())
-        self.updateImage(self.imageView1, init_pos[0], axis=0)
-        self.updateImage(self.imageView2, init_pos[1], axis=1)
-        self.updateImage(self.imageView3, init_pos[2], axis=2)
+        self.updateImage(self.imageView1, self.init_pos[0], axis=0)
+        self.updateImage(self.imageView2, self.init_pos[1], axis=1)
+        self.updateImage(self.imageView3, self.init_pos[2], axis=2)
 
     #    # Button to open file explorer
     #     self.loadButton = QPushButton(self)
@@ -203,19 +258,109 @@ class MainWindow(QMainWindow):
             for col, file_type in enumerate(["Qmask", "Conc", "Basic", "Holes"], start=1):
                 self.idTable.setItem(row, col, QTableWidgetItem('Yes' if file_info[file_type] else 'No'))
 
+    def create_metabolite_slider(self):
+        # Create a vertical slider
+        self.slider = QSlider(Qt.Vertical)
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(4)
+        self.slider.setTickPosition(QSlider.TicksBothSides)
+        self.slider.setTickInterval(1)
+        self.slider.setSingleStep(1)
+        self.slider.setValue(0)  # Default value
+
+        self.slider.valueChanged.connect(self.on_metabolic_slider_value_changed)
+
+        # Create a layout for the slider and labels
+        sliderLayout = QVBoxLayout()
+        sliderLayout.addWidget(self.slider)
+
+        # Labels for the slider positions
+        labels = ["Cr", "Glx", "GPC", "Ins", "NAA"]
+        labelLayout = QVBoxLayout()
+
+        # Custom font for the labels
+        font = QFont()
+        font.setPointSize(16)  # Adjust the font size as needed
+
+        for label_name in labels:
+            lbl = QLabel(label_name)
+            lbl.setFont(font)
+            lbl.setAlignment(Qt.AlignCenter)
+            labelLayout.addWidget(lbl)
+
+        # Combine the slider and label layouts
+        combinedLayout = QHBoxLayout()
+        combinedLayout.addLayout(sliderLayout)
+        combinedLayout.addLayout(labelLayout)
+
+        return combinedLayout
+
+
+    def create_3D_plane_buttonss(self):
+        buttonXYZPlaneLayout = QVBoxLayout()
+        # Create buttons
+        self.buttonXY = QPushButton("XY")
+        self.buttonYZ = QPushButton("YZ")
+        self.buttonXZ = QPushButton("XZ")
+        buttons = [self.buttonXY, self.buttonYZ, self.buttonXZ]
+        for button in buttons:
+            button.setCheckable(True)
+            button.clicked.connect(self.on_button_clicked)
+            button.setFixedSize(100, 40)  # Adjust the size as needed
+            button.setStyleSheet("""
+                QPushButton { font-size: 16pt; }
+                QPushButton:checked { background-color: green; color: white; }
+            """)
+            buttonXYZPlaneLayout.addWidget(button)
+        return buttonXYZPlaneLayout
+
+    def on_button_clicked(self):
+        sender = self.sender()
+        if sender.isChecked():
+            # Uncheck other buttons
+            for button in [self.buttonXY, self.buttonYZ, self.buttonXZ]:
+                if sender != button:
+                    button.setChecked(False)
+
+            # Determine which axis is selected and get the slider position
+            if sender == self.buttonXY:
+                position = self.slider3.value()
+                self.update_slice_plane('XY', position)
+            elif sender == self.buttonYZ:
+                position = self.slider1.value()
+                self.update_slice_plane('YZ', position)
+            elif sender == self.buttonXZ:
+                position = self.slider2.value()
+                self.update_slice_plane('XZ', position)
+
+
 
     def table_select(self, row, column):
         selected_id = self.idTable.item(row, 0).text()
         column_name = self.idTable.horizontalHeaderItem(column).text()
         print(f"Selected ID: {selected_id}, Column: {column_name}")
-        self.tensor3D_current, self.header = utils.load_nii(file_type=column_name,id=int(selected_id))
 
-        
-        self.updateImage(self.imageView1, self.slider1.value(), axis=0)
-        self.updateImage(self.imageView2, self.slider2.value(), axis=1)
-        self.updateImage(self.imageView3, self.slider3.value(), axis=2)
+        try:
+            selected_id=int(selected_id)
+            self.tensor3D_current, self.header = utils.load_nii(file_type=column_name,
+                                                                fileid=int(selected_id))
+            self.tensor3D_current=self.tensor3D_current[:,:,:]
+            self.updateImage(self.imageView1, self.slider1.value(), axis=0)
+            self.updateImage(self.imageView2, self.slider2.value(), axis=1)
+            self.updateImage(self.imageView3, self.slider3.value(), axis=2)
+        except:
+            self.tensor3D_current, self.header = utils.load_nii(file_type="OrigRes",
+                                                                fileid=selected_id,
+                                                                metabolic_str=self.metabolic_current)
+            self.init_pos = np.array([self.tensor3D_current.shape[0]/2,
+                                      self.tensor3D_current.shape[1]/2,self.
+                                      tensor3D_current.shape[2]/2]).astype(int)
+            self.updateFromSpinBox1(self.init_pos[0])
+            self.updateFromSpinBox2(self.init_pos[1])
+            self.updateFromSpinBox3(self.init_pos[2])
+
         # You can add additional logic here to do something with the selected ID and column
-
+        self.update_3D_plot()
 
     def imageClicked(self, event):
         # Convert the mouse click position to image coordinates
@@ -244,6 +389,8 @@ class MainWindow(QMainWindow):
         self.hLine2.setPos(value)
 
     def updateFromSpinBox1(self, value):
+        self.spinBox1.setRange(0, self.tensor3D_current.shape[0] - 1)
+        self.slider1.setRange(0, self.tensor3D_current.shape[0] - 1)
         self.spinBox1.setValue(value)
         self.slider1.setValue(value)
         self.updateLine23(value)
@@ -255,6 +402,8 @@ class MainWindow(QMainWindow):
         self.updateImage(self.imageView1, value, axis=0)
 
     def updateFromSpinBox2(self, value):
+        self.spinBox2.setRange(0, self.tensor3D_current.shape[1] - 1)
+        self.slider2.setRange(0, self.tensor3D_current.shape[1] - 1)
         self.spinBox2.setValue(value)
         self.slider2.setValue(value)
         self.updateLine13(value)
@@ -267,6 +416,8 @@ class MainWindow(QMainWindow):
 
 
     def updateFromSpinBox3(self, value):
+        self.spinBox3.setRange(0, self.tensor3D_current.shape[2] - 1)
+        self.slider3.setRange(0, self.tensor3D_current.shape[2] - 1)
         self.spinBox3.setValue(value)
         self.slider3.setValue(value)
         self.updateLine12(value)
@@ -287,9 +438,24 @@ class MainWindow(QMainWindow):
             print("Selected file:", fileName)
             self.loadNiiFile(fileName)
 
+    def on_metabolic_slider_value_changed(self, value):
+        # Print the label corresponding to the current slider position
+        if value >= 0 and value < len(self.metabolics_labels):
+            print(self.metabolics_labels[value])
+
+    def on_slider_value_changed(self, value):
+        # Update the slice plane based on the currently checked button and slider value
+        if self.buttonXY.isChecked():
+            self.update_slice_plane('XY', self.slider3.value())
+        elif self.buttonYZ.isChecked():
+            self.update_slice_plane('YZ', self.slider1.value())
+        elif self.buttonXZ.isChecked():
+            self.update_slice_plane('XZ', self.slider2.value())
+
     def loadNiiFile(self, file_path):
         # Load the NIfTI file
         self.tensor3D_current = np.flip(nib.load(file_path).get_fdata(), axis=2)
+        self.update_3D_plot()
         # Update the slider range
         self.slider.setRange(0, self.tensor3D_current.shape[self.current_axis] - 1)
         # Update the image
@@ -297,7 +463,56 @@ class MainWindow(QMainWindow):
         self.updateImage(self.imageView2, 0, axis=1)
         self.updateImage(self.imageView3, 0, axis=2)
 
+    def normalize_data(self,data):
+        # Replace NaNs with 0 for safety
+        data = data - np.nanmin(data)
+        data = data / np.nanmax(data)
+        data = np.nan_to_num(data)  # Convert NaNs to 0
+        # Normalize data to the range 0-1
+        min_val = np.min(data)
+        max_val = np.max(data)
+        if max_val - min_val != 0:
+            data = (data - min_val) / (max_val - min_val)
+        else:
+            # Avoid division by zero if all data values are the same
+            data = np.zeros(data.shape)
+        return data
 
+    def create_vispy_canvas(self):
+        tensor3D = self.normalize_data(self.tensor3D_current)
+        canvas = scene.SceneCanvas(keys='interactive', show=True)
+        self.view = canvas.central_widget.add_view()
+
+        # Create the volume visual
+        self.volume = scene.visuals.Volume(tensor3D, parent=self.view.scene)
+
+        # Create a slice plane
+        self.slice_plane = scene.visuals.Plane(direction='+z', color=(0, 1, 0, 0.5), parent=self.view.scene)
+        self.slice_plane.transform = STTransform(scale=(tensor3D.shape[1], tensor3D.shape[0], 1))
+        self.slice_plane.visible = False
+
+        self.view.camera = scene.cameras.TurntableCamera()
+        return canvas.native
+
+    def update_slice_plane(self, axis, position):
+        # Update the slice plane based on the selected axis and slider position
+        if axis == 'XY':
+            self.slice_plane.direction = '+z'
+            self.slice_plane.transform = STTransform(translate=(0, 0, position))
+        elif axis == 'YZ':
+            self.slice_plane.direction = '+x'
+            self.slice_plane.transform = STTransform(translate=(position, 0, 0))
+        elif axis == 'XZ':
+            self.slice_plane.direction = '+y'
+            self.slice_plane.transform = STTransform(translate=(0, position, 0))
+
+        self.slice_plane.visible = True
+
+    def update_3D_plot(self):
+        # Normalize the new data
+        new_tensor3D = self.tensor3D_current
+        normalized_data = self.normalize_data(new_tensor3D)
+        self.volume.set_data(normalized_data)
 
     def updateImage(self, imageView, slice_index, axis):
         if axis == 0:
@@ -331,76 +546,11 @@ class MainWindow(QMainWindow):
         imageView.setImage(colored_slice)
 
 
-class ClickableImageView(pg.ImageView):
-    def __init__(self, *args, **kwargs):
-        super(ClickableImageView, self).__init__(*args, **kwargs)
-        self.selectedPixels = set()
-        self.originalImageData = None  # To store the original image data
-
-    def setImage(self, img, *args, **kwargs):
-        self.originalImageData = np.array(img)
-        super(ClickableImageView, self).setImage(img, *args, **kwargs)
-
-    def updateImageWithSelection(self):
-        if self.originalImageData is not None:
-            # Create a copy of the original image to modify
-            img_data = np.array(self.originalImageData)
-
-            # Modify pixels based on selection
-            for x, y in self.selectedPixels:
-                if 0 <= x < img_data.shape[1] and 0 <= y < img_data.shape[0]:
-                    img_data[y, x] = [0, 0, 255]  # Set selected pixels to blue
-
-            # Update the displayed image
-            super(ClickableImageView, self).setImage(img_data)
-
-
-class Plot3DWindow(QMainWindow):
-    def __init__(self, tensor3D):
-        super().__init__()
-        self.tensor3D = tensor3D
-        self.initUI(tensor3D)
-
-    def create_3d_plot(self, tensor3D):
-        def normalize_data(data):
-            nan_mask = np.isnan(data)
-            min_val = np.nanmin(data)
-            max_val = np.nanmax(data)
-            data = (data - min_val) / (max_val - min_val)
-            data[nan_mask] = 0  # You can choose how to handle NaNs
-            return data
-
-        tensor3D = normalize_data(tensor3D)
-        # Create a GLViewWidget object
-        self.glWidget = GLViewWidget()
-        # Convert the 3D tensor to a format suitable for GLVolumeItem
-        # Adjust this according to your tensor's format
-        volume = np.flip(tensor3D, axis=0).T
-        volume = np.ascontiguousarray(volume, dtype=np.float32)
-        # Create a volume item
-        self.volumeItem = GLVolumeItem(volume)
-        self.volumeItem.translate(-volume.shape[0]/2, -volume.shape[1]/2, -volume.shape[2]/2)
-        # Add the volume item to the widget
-        self.glWidget.addItem(self.volumeItem)
-        return self.glWidget
-
-    def initUI(self,tensor3D):
-        # Create a central widget
-        centralWidget = QWidget(self)
-        self.setCentralWidget(centralWidget)
-
-        # Create a layout
-        layout = QVBoxLayout(centralWidget)
-
-        # Create the 3D plot
-        glWidget = self.create_3d_plot(tensor3D)
-        layout.addWidget(glWidget)
-
-
-
 
 def main():
     app = QApplication(sys.argv)
+    # plot3DWindow = Plot3DWindow()
+    # plot3DWindow.show()
     mainWin = MainWindow()
     mainWin.show()
     sys.exit(app.exec_())

@@ -8,8 +8,8 @@ from scipy.interpolate import griddata
 from scipy.stats import binom
 from scipy.stats import binomtest
 
-from fillgaps.tools.messages import MessagePrinter
-msgprint = MessagePrinter()
+from fillgaps.tools.debug import Debug
+debug = Debug()
 
 
 class Gaps(object):
@@ -28,7 +28,7 @@ class Gaps(object):
                 break
             else:
                 threshold+=1
-        msgprint.info("Binary cutoff at",threshold)
+        debug.info("Binary cutoff at",threshold)
         return (count > threshold).astype(bool)
 
     def elementwise_agreement(self,tensor1, tensor2):
@@ -258,7 +258,7 @@ class Gaps(object):
         interpolated_tensor = tensor.copy()
         bounds = self.find_bounds(tensor, margin_percent)
         if bounds is None:
-            msgprint.warning("No -1 values to interpolate")
+            debug.warning("No -1 values to interpolate")
             return tensor  # No -1 values to interpolate
 
         min_bounds, max_bounds = bounds

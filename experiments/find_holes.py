@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from fillgaps.tools.utilities import Utilities
 from fillgaps.proc.gaps import Gaps
-from fillgaps.tools.messages import MessagePrinter
+from fillgaps.tools.debug import Debug
 import time, os
 from scipy.stats import binomtest
 
@@ -13,7 +13,7 @@ arr_nHoles = np.array([10,50,100,500,1000,10000,100000])
 arr_margin_percent = np.array([5])
 utils    = Utilities()
 gaps     = Gaps()
-msgprint = MessagePrinter()
+debug    = Debug()
 
 ## Create dataset
 tensors_basic, _      = utils.load_nii_all("Basic")
@@ -23,7 +23,7 @@ n1 = np.sum(a.sum())
 n0 = len(np.where(a==0)[0])
 ndim = np.product(np.shape(a))
 for tensor in tensors_qmask:
-    msgprint.info(n0-len(np.where(tensor==0)[0]), n1 - np.sum(tensor.sum()) )
+    debug.info(n0-len(np.where(tensor==0)[0]), n1 - np.sum(tensor.sum()) )
 
 # tensors_basic         = tensors_basic[:, :-1, 4:-5, :-1]
 # tensors_basic         = tensors_basic/np.nanmax(tensors_basic)
@@ -32,7 +32,7 @@ tensors_basic_holes    = gaps.compute_tensor_holes(tensors_qmask,tensors_basic)
 nholes = np.zeros(tensors_basic_holes.shape[0])
 for idt,tensor in enumerate(tensors_basic_holes):
     nholes[idt] = len(np.where(tensor==-1)[0])
-    msgprint.info("Number of holes detected ",nholes[idt])
+    debug.info("Number of holes detected ",nholes[idt])
     utils.save_nii_file("Holes",idt,tensor)
 
 plt.hist(nholes)
@@ -47,8 +47,8 @@ plt.show()
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 for idm,crop_area_pc in enumerate(tqdm(arr_margin_percent)):
-    msgprint.separator()
-    msgprint.info("Crop area percentage",crop_area_pc,"%")
+    debug.separator()
+    debug.info("Crop area percentage",crop_area_pc,"%")
     loss         = np.zeros([len(arr_nHoles),tensors_basic.shape[0]])
     var          = np.zeros([len(arr_nHoles),tensors_basic.shape[0]])
     elapsed_time = np.zeros([len(arr_nHoles),tensors_basic.shape[0]])
@@ -60,7 +60,7 @@ for idm,crop_area_pc in enumerate(tqdm(arr_margin_percent)):
             elapsed_time[idh,idt] = time.time() - start_time
             loss[idh,idt] = np.mean(interpolated_tensor-tensor)**2
             var[idh,idt]  = np.std(interpolated_tensor-tensor)
-        msgprint.success("Reconstructed with loss for nHoles",nHoles,"with L=",loss[idh].mean())
+        debug.success("Reconstructed with loss for nHoles",nHoles,"with L=",loss[idh].mean())
 
 
     # ax1.fill_between(arr_nHoles, loss.mean(axis=1)+var.mean(axis=1),
@@ -104,7 +104,7 @@ plt.show()
 #                             "MRSI_reconstructed",
 #                             'qmask_population.nii')   
 #     nifti_img.to_filename(outpath)
-#     msgprint.success("Saved to " + outpath)
+#     debug.success("Saved to " + outpath)
 # nholes_dist = np.zeros(np.shape(tensors_qmask)[0])
 # tensors_gaps = np.zeros(tensors_qmask.shape).astype(dtype=bool)
 # for idt, tensor in enumerate(tensors_qmask):

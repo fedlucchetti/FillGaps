@@ -7,7 +7,7 @@ import os, sys
 from tqdm import tqdm
 from fillgaps.tools.utilities import Utilities
 from fillgaps.proc.gaps import Gaps
-from fillgaps.tools.messages import MessagePrinter
+from fillgaps.tools.debug import Debug
 from fillgaps.neuralnet.deepdenoiser import DeepDenoiser
 
 ##### Training set
@@ -17,7 +17,7 @@ nVal   = 8 # number of patient taken out of training for validation
 
 utils    = Utilities()
 gaps     = Gaps()
-msgprint = MessagePrinter()
+debug = Debug()
 
 # tensors_qmask, headers = utils.load_nii_all("Qmask")
 # tensors_qmask          = tensors_qmask.astype(dtype=bool)
@@ -43,7 +43,7 @@ def save_data(X_train, Y_train, X_val, Y_val, directory="data", filename="datase
         os.makedirs(directory)
     file_path = os.path.join(directory, filename)
     np.savez(file_path, X_train=X_train, Y_train=Y_train, X_val=X_val, Y_val=Y_val)
-    msgprint.success("Saved dataset to",filename)
+    debug.success("Saved dataset to",filename)
 
 
 # Example usage
@@ -60,10 +60,10 @@ tensors_basic_train   = tensors_basic[nVal::]
 X_train, Y_train = create_dataset(tensors_basic_train)
 X_val  , Y_val   = create_dataset(tensors_basic_val)
 
-msgprint.success("Created training set with",X_train.shape[0],
+debug.success("Created training set with",X_train.shape[0],
                  "examples of shape",X_train.shape[1::])
 
-msgprint.success("Created validation set with",X_val.shape[0],
+debug.success("Created validation set with",X_val.shape[0],
                  "examples of shape",X_val.shape[1::])
 
 name = "dataset_nHoles_" + str(nHoles) + ".npz"
@@ -88,7 +88,7 @@ history = ddn.train(autoencoder, X_train, Y_train,
 #                             "MRSI_reconstructed",
 #                             'qmask_population.nii')   
 #     nifti_img.to_filename(outpath)
-#     msgprint.success("Saved to " + outpath)
+#     debug.success("Saved to " + outpath)
 # nholes_dist = np.zeros(np.shape(tensors_qmask)[0])
 # tensors_gaps = np.zeros(tensors_qmask.shape).astype(dtype=bool)
 # for idt, tensor in enumerate(tensors_qmask):
