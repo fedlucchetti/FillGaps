@@ -6,5 +6,4 @@ tqdm
 scipy
 statsmodels
 PyOpenGL
-monai
 natsort

@@ -11,7 +11,7 @@ setup(
     description = ("Autocomplete missing voxel in reconstructed MRSI data"),
     license = "BSD",
     keywords = "example documentation tutorial",
-    packages=find_packages(include=['neuralnet','proc','tools']),
+    packages=find_packages(include=['fillgaps']),
     # long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Beta",

@@ -17,7 +17,7 @@ debug = Debug()
 
 ## Create dataset
 tensors_basic, _      = utils.load_nii_all("Basic")
-tensors_qmask, _      = utils.load_nii_all("Qmask")
+# tensors_qmask, _      = utils.load_nii_all("Qmask")
 
 
 tensors_basic         = tensors_basic[:, :-1, 4:-5, :-1]

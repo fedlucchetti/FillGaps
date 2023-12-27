@@ -144,7 +144,7 @@ class Gaps(object):
         - The function returns early if it's not possible to grow the cluster to size K.
         """
         tensor_holes = tensor.copy()
-        dims = tensor.shape
+        dims = tensor_holes.shape
         cluster = set()
         directions = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)]
 
@@ -163,12 +163,16 @@ class Gaps(object):
         # non_nan_coords = np.argwhere(~np.isnan(tensor))
         # start_voxel = tuple(non_nan_coords[np.random.choice(len(non_nan_coords))])
 
-        non_zero_non_nan_coords = np.argwhere((~np.isnan(tensor)) & (tensor != 0))
+        non_zero_non_nan_coords = np.argwhere((~np.isnan(tensor_holes)) & (tensor_holes != 0))
+        # debug.info("non_zero_non_nan_coords",len(non_zero_non_nan_coords),"K",K)
         # Make sure there are valid voxels to choose from
-        if len(non_zero_non_nan_coords) > 0:
-            start_voxel = tuple(non_zero_non_nan_coords[np.random.choice(len(non_zero_non_nan_coords))])
-        else:
-            raise ValueError("No valid non-zero, non-NaN voxels found in the tensor.")
+        while True:
+            if len(non_zero_non_nan_coords) > 0:
+                start_voxel = tuple(non_zero_non_nan_coords[np.random.choice(len(non_zero_non_nan_coords))])
+                break
+            else:
+                pass
+                # debug.warning("No valid non-zero, non-NaN voxels found in the tensor. K=",K)
         
         cluster.add(start_voxel)
 
@@ -180,7 +184,7 @@ class Gaps(object):
             random.shuffle(neighbors)
             
             for neighbor in neighbors:
-                if neighbor not in cluster and tensor[neighbor] != 0:
+                if neighbor not in cluster and tensor_holes[neighbor] != 0:
                     # Add neighbor to the cluster only if the tensor value at neighbor is not 0
                     cluster.add(neighbor)
                     break

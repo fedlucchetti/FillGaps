@@ -26,6 +26,11 @@ class Utilities(object):
         self.DATAPATH      = os.path.join(self.ROOTPATH,"Data")
         self.DEVPATH       = os.path.join(self.ROOTPATH,"Code")
         self.DATARECONPATH = os.path.join(self.DATAPATH, "MRSI_reconstructed")
+        debug.info("ROOTPATH",self.ROOTPATH)
+        debug.info("DATAPATH",self.DATAPATH)
+        debug.info("DEVPATH",self.DEVPATH)
+        debug.info("DATARECONPATH",self.DATARECONPATH)
+        self.list_nii()
 
     def list_unique_ids(self, file_types):
         unique_ids_info = {}
@@ -35,7 +40,6 @@ class Utilities(object):
                     for file_type in file_types:
                         if file_type == "OrigRes":
                             match = re.search(r'OrigRes_[\w+]+_conc([A-Za-z0-9]{4})\.nii', file)
-                            debug.info(match)
                             if match:
                                 id = match.group(1)
                                 if id not in unique_ids_info:
@@ -71,8 +75,8 @@ class Utilities(object):
             for file in files:
                 if file.endswith('.nii'):
                     nii_files.append(os.path.join(root, file))
-        self.nii_files = nii_files
-        return nii_files
+        self.nii_files = list(set(nii_files))
+        return self.nii_files
 
 
     def __load_orig(self,metabolic_str, fileid):
@@ -95,30 +99,32 @@ class Utilities(object):
             data = self.__load_orig(metabolic_str, fileid)
             if data is None: debug.error("load nii: pattern not found")
         else:
-            self.list_nii()
-                # Construct the filename pattern
-            filename_pattern = f"{file_type}{fileid:04d}.nii"
-            # debug.info("Looking for " + filename_pattern)
+            
+            filename_pattern = f"/{file_type}{fileid:04d}.nii"
             # Search for the file in the list
+            # sys.exit()
             for file in self.nii_files:
                 if filename_pattern in file:
-                    # debug.success("Extracting data from "+file)
-                    data = nib.load(file)
-                    break
+                    try:
+                        data = nib.load(file)
+                        break
+                    except Exception as e:pass
         return data.get_fdata(),data.header
     
-    def load_nii_all(self,file_type="Conc"):
-        debug.info("Extracting all" + file_type +" data from ")
-        pattern = re.compile(f"{file_type}(\\d+).nii")
-        self.list_nii()
+    def load_nii_all(self,file_type="Conc",normalization=False):
+        # debug.info("Extracting all" + file_type +" data from ")
+        pattern = re.compile(f"/{file_type}(\\d+).nii")
+        # self.list_nii()
 
         ids = []
         for filename in self.nii_files:
             match = pattern.search(filename)
             if match:
                 id_str = match.group(1)
-                ids.append(int(id_str))  # Convert ID to integer
+                if id_str not in ids:
+                    ids.append(int(id_str))  # Convert ID to integer
         ids.sort()
+        id=list(set(ids))
         __template,_ = self.load_nii(file_type,0)
         data, headers = np.zeros((len(ids),)+__template.shape),list()
         for i in tqdm(ids):
@@ -126,6 +132,8 @@ class Utilities(object):
             data[i]=__data
             headers.append(__header)
         debug.success("Done")
+        if normalization:
+            data=data/data.max()
         return data, headers
 
     def save_nii_file(self,file_type,fileid,tensor3D):
@@ -134,7 +142,7 @@ class Utilities(object):
         os.makedirs(dirpath,exist_ok=True)
         outpath   = os.path.join(dirpath,f"{file_type}{fileid:04d}.nii") 
         nifti_img.to_filename(outpath)
-        debug.success("Saved to " + outpath)
+        debug.success("Saved NII to " + outpath)
 
 
     

@@ -1,32 +1,38 @@
 FROM tensorflow/tensorflow:latest-gpu
 
-
+# Upgrade pip
 RUN python3 -m pip install --upgrade pip
 
 # Create directories
-RUN mkdir -p /home/FillGaps/data \
-    && mkdir -p /home/FillGaps/neuralnet \
-    && mkdir -p /home/FillGaps/proc \
-    && mkdir -p /home/FillGaps/tools \
-    && mkdir -p /home/FillGaps/results
+RUN mkdir -p /home/Connectonome/FillGaps \
+    && mkdir -p /home/Connectonome/FillGaps/data \
+    && mkdir -p /home/Connectonome/FillGaps/fillgaps \
+    && mkdir -p /home/Connectonome/FillGaps/fillgaps/neuralnet \
+    && mkdir -p /home/Connectonome/FillGaps/fillgaps/proc \
+    && mkdir -p /home/Connectonome/FillGaps/fillgaps/tools \
+    && mkdir -p /home/Connectonome/FillGaps/results \
+    && mkdir -p /home/Connectonome/Data
 
-# Copy files into the container
-WORKDIR /home/FillGaps
+WORKDIR /home/Connectonome/FillGaps
 COPY *.py ./
 COPY requirements.txt .
 COPY setup.py .
+
 # Install requirements
 RUN pip3 install -r requirements.txt
 
-# Change permissions
-RUN chmod -R ugo=rwx .
+# # Change permissions (consider more restrictive permissions)
+# RUN chmod -R ugo=rwx .
 
-# Install the package (assuming there's a setup.py in the current directory)
-# RUN pip3 install -e .
+# Install the package
+RUN pip3 install -e .
 
-# Run as non-root user for better security
+# Create and switch to a non-root user for better security
 RUN useradd -m fillgapsuser
+RUN chown -R fillgapsuser:fillgapsuser /home/Connectonome/FillGaps
 USER fillgapsuser
-USER root
-RUN pip3 install .
-USER fillgapsuser
+RUN pip3 install -e .
+
+
+# (Optional) Set the entry point or health check here
+
