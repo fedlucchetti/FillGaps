@@ -325,13 +325,16 @@ class MainWindow(QMainWindow):
             # Determine which axis is selected and get the slider position
             if sender == self.buttonXY:
                 position = self.slider3.value()
-                self.update_slice_plane('XY', position)
+                # self.update_slice_plane('XY', position)
+                self.update_volume_with_highlighted_slice('XY', position)
             elif sender == self.buttonYZ:
                 position = self.slider1.value()
-                self.update_slice_plane('YZ', position)
+                # self.update_slice_plane('YZ', position)
+                self.update_volume_with_highlighted_slice('YZ', position)
             elif sender == self.buttonXZ:
                 position = self.slider2.value()
-                self.update_slice_plane('XZ', position)
+                # self.update_slice_plane('XZ', position)
+                self.update_volume_with_highlighted_slice('XZ', position)
 
 
 
@@ -494,16 +497,41 @@ class MainWindow(QMainWindow):
         self.view.camera = scene.cameras.TurntableCamera()
         return canvas.native
 
-    def update_slice_plane(self, axis, position):
-        # Update the slice plane based on the selected axis and slider position
+    def highlight_slice(self,tensor3D, axis, slice_index, highlight_color):
+        modified_tensor = np.copy(tensor3D)
+
+        # Assign the highlight color to the specified slice
         if axis == 'XY':
-            self.slice_plane.direction = '+z'
+            modified_tensor[slice_index, :, :] = highlight_color
+        elif axis == 'YZ':
+            modified_tensor[:, slice_index, :] = highlight_color
+        elif axis == 'XZ':
+            modified_tensor[:, :, slice_index] = highlight_color
+
+        return modified_tensor
+
+    def update_volume_with_highlighted_slice(self, axis, position):
+        # Normalize and highlight the slice
+        normalized_data = self.normalize_data(self.tensor3D_current)
+        highlighted_data = self.highlight_slice(normalized_data, axis, position, highlight_color=1)  # or any color value you choose
+
+        # Update the volume data
+        self.volume.set_data(highlighted_data)
+
+    def update_slice_plane(self, axis, position):
+        # Delete the existing slice plane
+        if hasattr(self, 'slice_plane'):
+            self.slice_plane.parent = None
+
+        # Recreate the slice plane based on the selected axis
+        if axis == 'XY':
+            self.slice_plane = scene.visuals.Plane(direction='+z', color=(0, 1, 0, 0.5), parent=self.view.scene)
             self.slice_plane.transform = STTransform(translate=(0, 0, position))
         elif axis == 'YZ':
-            self.slice_plane.direction = '+x'
+            self.slice_plane = scene.visuals.Plane(direction='+x', color=(0, 1, 0, 0.5), parent=self.view.scene)
             self.slice_plane.transform = STTransform(translate=(position, 0, 0))
         elif axis == 'XZ':
-            self.slice_plane.direction = '+y'
+            self.slice_plane = scene.visuals.Plane(direction='+y', color=(0, 1, 0, 0.5), parent=self.view.scene)
             self.slice_plane.transform = STTransform(translate=(0, position, 0))
 
         self.slice_plane.visible = True
@@ -512,6 +540,7 @@ class MainWindow(QMainWindow):
         # Normalize the new data
         new_tensor3D = self.tensor3D_current
         normalized_data = self.normalize_data(new_tensor3D)
+        normalized_data = normalized_data.astype(np.float32)
         self.volume.set_data(normalized_data)
 
     def updateImage(self, imageView, slice_index, axis):
