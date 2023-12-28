@@ -6,7 +6,7 @@ import nibabel as nib
 import os, sys
 
 from tools.utilities import Utilities
-from proc.gaps import Gaps
+from fillgaps.proc.gaps import Gaps
 
 utils = Utilities()
 gaps  = Gaps()

@@ -6,14 +6,14 @@ from tqdm import tqdm
 from natsort import natsorted
 
 
-from fillgaps.tools.debug import Debug
+from tools.debug import Debug
 
 
 debug=Debug()
 
 def find_root_path():
     current_path = os.path.abspath(__file__)
-    while os.path.basename(current_path) != "Connectonome":
+    while os.path.basename(current_path) != "Connectome":
         current_path = os.path.dirname(current_path)
         if current_path == os.path.dirname(current_path):
             return None
@@ -24,12 +24,12 @@ class Utilities(object):
     def __init__(self):
         self.ROOTPATH      = find_root_path()
         self.DATAPATH      = os.path.join(self.ROOTPATH,"Data")
-        self.DEVPATH       = os.path.join(self.ROOTPATH,"Code")
+        self.DEVPATH       = os.path.join(self.ROOTPATH,"Dev")
         self.DATARECONPATH = os.path.join(self.DATAPATH, "MRSI_reconstructed")
-        debug.info("ROOTPATH",self.ROOTPATH)
-        debug.info("DATAPATH",self.DATAPATH)
-        debug.info("DEVPATH",self.DEVPATH)
-        debug.info("DATARECONPATH",self.DATARECONPATH)
+        debug.info("ROOTPATH set to",self.ROOTPATH)
+        debug.info("DATAPATH set to",self.DATAPATH)
+        debug.info("DEVPATH set to",self.DEVPATH)
+        debug.info("DATARECONPATH set to",self.DATARECONPATH)
         self.list_nii()
 
     def list_unique_ids(self, file_types):

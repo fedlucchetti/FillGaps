@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import nibabel as nib
 import os, sys
 from tqdm import tqdm
-from fillgaps.tools.utilities import Utilities
+from tools.utilities import Utilities
 from fillgaps.proc.gaps import Gaps
-from fillgaps.tools.debug import Debug
+from tools.debug import Debug
 from fillgaps.neuralnet.deepdenoiser import DeepDenoiser
 
 ##### Training set
@@ -82,20 +82,7 @@ history = ddn.train(autoencoder, X_train, Y_train,
               X_val  , Y_val, 
               epochs=10, batch_size=1)
 
-# q = input("Do you want to safe the processed population qmask? [y,n]")
-# if q=="y":
-#     nifti_img = nib.Nifti1Image(tensor_uniqmask.astype(np.float64), np.eye(4))
-#     outpath   = os.path.join(utils.DATAPATH,
-#                             "MRSI_reconstructed",
-#                             'qmask_population.nii')   
-#     nifti_img.to_filename(outpath)
-#     debug.success("Saved to " + outpath)
-# nholes_dist = np.zeros(np.shape(tensors_qmask)[0])
-# tensors_gaps = np.zeros(tensors_qmask.shape).astype(dtype=bool)
-# for idt, tensor in enumerate(tensors_qmask):
-#     com = np.bitwise_and(tensor,tensor_uniqmask)
-#     tensors_gaps[idt] = np.bitwise_not(com)
-#     nholes_dist[idt] = np.prod(tensor_uniqmask.shape) - tensors_gaps[idt].sum()
+
 
 
 

@@ -3,17 +3,19 @@ FROM tensorflow/tensorflow:latest-gpu
 # Upgrade pip
 RUN python3 -m pip install --upgrade pip
 
-# Create directories
-RUN mkdir -p /home/Connectonome/FillGaps \
-    && mkdir -p /home/Connectonome/FillGaps/data \
-    && mkdir -p /home/Connectonome/FillGaps/fillgaps \
-    && mkdir -p /home/Connectonome/FillGaps/fillgaps/neuralnet \
-    && mkdir -p /home/Connectonome/FillGaps/fillgaps/proc \
-    && mkdir -p /home/Connectonome/FillGaps/fillgaps/tools \
-    && mkdir -p /home/Connectonome/FillGaps/results \
-    && mkdir -p /home/Connectonome/Data
+# Define a base directory variable
+ARG BASE_DIR=/Connectome/Analytics
 
-WORKDIR /home/Connectonome/FillGaps
+# Create directories using the base directory variable
+RUN mkdir -p $BASE_DIR/fillgaps/neuralnet \
+             $BASE_DIR/fillgaps/proc \
+             $BASE_DIR/tools \
+             $BASE_DIR/results \
+             $BASE_DIR/experiments \
+             /Connectome/Data
+
+WORKDIR $BASE_DIR
+
 COPY *.py ./
 COPY requirements.txt .
 COPY setup.py .
@@ -24,14 +26,11 @@ RUN pip3 install -r requirements.txt
 # # Change permissions (consider more restrictive permissions)
 # RUN chmod -R ugo=rwx .
 
-# Install the package
-RUN pip3 install -e .
 
 # Create and switch to a non-root user for better security
-RUN useradd -m fillgapsuser
-RUN chown -R fillgapsuser:fillgapsuser /home/Connectonome/FillGaps
-USER fillgapsuser
-RUN pip3 install -e .
+RUN useradd -m analyticsuser
+RUN chown -R analyticsuser:analyticsuser $BASE_DIR
+USER analyticsuser
 
 
 # (Optional) Set the entry point or health check here

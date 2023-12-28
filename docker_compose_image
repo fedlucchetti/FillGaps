@@ -1,3 +1,9 @@
 #!/bin/bash
 ## build image from dockerfile
-docker build . -t fillgaps
+docker build . -t analytics
+
+echo "###############################"
+echo "Image build successfully."
+echo "Create container with:"
+echo "bash docker_container_build_gpu"
+echo "###############################"

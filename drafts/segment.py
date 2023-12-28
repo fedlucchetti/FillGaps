@@ -11,8 +11,8 @@ from monai.inferers import sliding_window_inference
 from monai.transforms import Resize
 from vispy import app, scene
 
-from fillgaps.tools.utilities import Utilities
-from fillgaps.tools.debug import Debug
+from tools.utilities import Utilities
+from tools.debug import Debug
 
 debug = Debug()
 utils = Utilities()

@@ -11,30 +11,26 @@ from PyQt5.QtGui import QFont
 
 
 
-from PyQt5.QtWidgets import QTableWidget, QSlider, QTableWidgetItem
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import Qt
 
-from vispy import app, scene
-from vispy.color import Colormap
+from vispy import scene
 from vispy.visuals.transforms import STTransform
 
 
 
-from PyQt5.QtCore import Qt
 import pyqtgraph as pg
-from pyqtgraph.opengl import GLViewWidget, GLVolumeItem
 from pyqtgraph import InfiniteLine
-from pyqtgraph import ImageView
 
-from fillgaps.tools.utilities import Utilities
-from fillgaps.tools.debug import Debug
+from tools.utilities import Utilities
+from tools.debug import Debug
 
 # from tools.ClickableIMG import ClickableImageView 
 
 utils = Utilities()
 debug = Debug()
 
-# DATAPATH = "/Users/flucchetti/Documents/Connectonome/Data/MRSI_reconstructed/Basic"
+# DATAPATH = "/Users/flucchetti/Documents/Connectome/Data/MRSI_reconstructed/Basic"
 
 
 
@@ -61,12 +57,9 @@ class MainWindow(QMainWindow):
         self.metabolics_labels = ["Cr", "Glx", "GPC", "Ins", "NAA"]  # Class attribute for labels
 
         self.selectedPixels = set()  # Keep track of selected pixels
-        # data = nib.load(os.path.join(self.DATAPATH,"Basic","Basic0001.nii")).get_fdata()
         data, header = utils.load_nii(file_type="Holes",fileid=1)
         self.unique_ids = utils.list_unique_ids(self.file_types)  # Assuming this method exists and returns a list of IDs
-        # print(self.unique_ids)
-        # print("data shape",data.shape)
-        # print("data min,max",np.min(data),np.max(data))
+
         data = np.flip(data, axis=2)
         self.tensor3D_current=data
         self.current_axis = 0  # 0 for x-axis, 1 for y-axis, 2 for z-axis
@@ -585,7 +578,6 @@ def main():
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    print("Main")
     main()
 
 

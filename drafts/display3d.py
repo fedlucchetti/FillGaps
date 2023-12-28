@@ -1,8 +1,8 @@
 
 import numpy as np
 from vispy import app, scene
-from fillgaps.tools.utilities import Utilities
-from fillgaps.tools.debug import Debug
+from tools.utilities import Utilities
+from tools.debug import Debug
 from vispy.color import Colormap
 
 # from tools.ClickableIMG import ClickableImageView 

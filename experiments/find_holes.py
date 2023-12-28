@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from fillgaps.tools.utilities import Utilities
+from tools.utilities import Utilities
 from fillgaps.proc.gaps import Gaps
-from fillgaps.tools.debug import Debug
+from tools.debug import Debug
 import time, os
 from scipy.stats import binomtest
 
@@ -39,7 +39,7 @@ plt.hist(nholes)
 plt.xlabel("Number of holes",fontsize=16)
 plt.ylabel("Counts",fontsize=16)
 plt.tight_layout()
-path = os.path.join(utils.DEVPATH,"FillGaps","results","nholes_distribution.pdf")
+path = os.path.join(utils.DEVPATH,"","results","nholes_distribution.pdf")
 plt.savefig(path, format='pdf', bbox_inches='tight')
 plt.show()
 
@@ -82,7 +82,7 @@ ax1.legend()
 ax2.legend()
 
 plt.tight_layout()
-path = os.path.join(utils.DEVPATH,"FillGaps","results","interpolate3D_nearest_neighbor.pdf")
+path = os.path.join(utils.DEVPATH,"","results","interpolate3D_nearest_neighbor.pdf")
 plt.savefig(path, format='pdf', bbox_inches='tight')
 
 plt.show()

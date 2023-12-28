@@ -8,7 +8,7 @@ from scipy.interpolate import griddata
 from scipy.stats import binom
 from scipy.stats import binomtest
 
-from fillgaps.tools.debug import Debug
+from tools.debug import Debug
 debug = Debug()
 
 

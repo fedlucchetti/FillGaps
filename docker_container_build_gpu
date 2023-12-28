@@ -3,7 +3,9 @@
 # Default value is 0 if no argument is provided
 NUM=${1:-0}
 
-DEV_CONTAINER="fillgaps_dev_gpu_${NUM}"
+DEV_CONTAINER="analytics_dev_gpu_${NUM}"
+user="${USER}"
+user="analyticsuser"
 
 # Check if the container exists
 if [ "$(docker ps -aq -f name=^${DEV_CONTAINER}$)" ]; then
@@ -15,18 +17,22 @@ fi
 ## define volumes to be mounted
 ROOT=$(pwd)
 DATAPATH=$(dirname $(dirname $(pwd)))/Data
-BINPATH=${ROOT}/fillgaps
+echo "DEV_ANA path set to $ROOT"
+echo "DATA path set to $DATAPATH"
+
+FILLGAPSPATH=${ROOT}/fillgaps
+TOOLPATH=${ROOT}/tools
 EXPPATH=${ROOT}/experiments
 RESULTSPATH=${ROOT}/results
 
 ## define mount destination
-ROOTDESTPATH=/home/Connectonome/FillGaps
-DATADESTPATH=/home/Connectonome/Data
-BINDESTPATH=${ROOTDESTPATH}/fillgaps
+ROOTDESTPATH=/Connectome/Analytics
+DATADESTPATH=/Connectome/Data
+FILLGAPSDESTPATH=${ROOTDESTPATH}/fillgaps
+TOOLDESTPATH=${ROOTDESTPATH}/tools
 EXPDISTPATH=${ROOTDESTPATH}/experiments
 RESULTSDISTPATH=${ROOTDESTPATH}/results
 
-user="${USER}"
 
 ## build container
 docker run -itd \
@@ -37,12 +43,14 @@ docker run -itd \
   --name "${DEV_CONTAINER}" \
   --hostname $HOSTNAME'_DOCKER_'${NUM} \
   -v ${DATAPATH}:${DATADESTPATH} \
-  -v ${BINPATH}:${BINDESTPATH} \
+  -v ${FILLGAPSPATH}:${FILLGAPSDESTPATH} \
+  -v ${TOOLPATH}:${TOOLDESTPATH} \
   -v ${EXPPATH}:${EXPDISTPATH} \
   -v ${RESULTSPATH}:${RESULTSDISTPATH} \
-  -it fillgaps:latest \
+  -it analytics:latest \
   /bin/bash
 
+docker exec -it ${DEV_CONTAINER} pip3 install -e .
 # Add input prompt here
 read -p "Do you want to enter the Docker container? (Y/n) " answer
 case ${answer:0:1} in
