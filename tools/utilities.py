@@ -91,7 +91,7 @@ class Utilities(object):
                     return nib.load(file_path)
         return None
 
-    def load_nii(self,file_type="Conc",fileid=1,metabolic_str=None):
+    def load_nii(self,file_type="Conc",fileid=1,metabolic_str=None,normalization=False,rawnii=False):
         if file_type=="OrigRes":
             if metabolic_str is None:
                 debug.error("load nii: empty metabolic_str")
@@ -99,7 +99,6 @@ class Utilities(object):
             data = self.__load_orig(metabolic_str, fileid)
             if data is None: debug.error("load nii: pattern not found")
         else:
-            
             filename_pattern = f"/{file_type}{fileid:04d}.nii"
             # Search for the file in the list
             # sys.exit()
@@ -109,13 +108,17 @@ class Utilities(object):
                         data = nib.load(file)
                         break
                     except Exception as e:pass
-        return data.get_fdata(),data.header
+        imgdata,header = data.get_fdata(),data.header
+        if normalization:
+            imgdata=imgdata/imgdata.max()
+            imgdata[imgdata<0.0001]=0
+        if rawnii:
+            return data
+        else:
+            return imgdata,header
     
     def load_nii_all(self,file_type="Conc",normalization=False):
-        # debug.info("Extracting all" + file_type +" data from ")
         pattern = re.compile(f"/{file_type}(\\d+).nii")
-        # self.list_nii()
-
         ids = []
         for filename in self.nii_files:
             match = pattern.search(filename)
@@ -128,12 +131,11 @@ class Utilities(object):
         __template,_ = self.load_nii(file_type,0)
         data, headers = np.zeros((len(ids),)+__template.shape),list()
         for i in tqdm(ids):
-            __data,__header = self.load_nii(file_type,i)
+            __data,__header = self.load_nii(file_type,i,metabolic_str=None,normalization=normalization)
             data[i]=__data
             headers.append(__header)
         debug.success("Done")
-        if normalization:
-            data=data/data.max()
+
         return data, headers
 
     def save_nii_file(self,file_type,fileid,tensor3D):
