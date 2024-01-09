@@ -11,11 +11,11 @@ setup(
     description = ("Autocomplete missing voxel in reconstructed MRSI data"),
     license = "BSD",
     keywords = "example documentation tutorial",
-    packages=find_packages(include=['fillgaps','tools']),
+    packages=find_packages(include=['fillgaps','tools','graphplot']),
     # long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Beta",
-        "Topic :: Utilities",
+        "Topic :: DataUtils",
         "License :: OSI Approved :: BSD License",
     ],
 )

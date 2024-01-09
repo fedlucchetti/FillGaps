@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import nibabel as nib
 import os, sys
 from tqdm import tqdm
-from tools.utilities import Utilities
+from Dev.Analytics.tools.datautils import DataUtils
 from fillgaps.proc.gaps import Gaps
 from tools.debug import Debug
 from fillgaps.neuralnet.deepdenoiser import DeepDenoiser
@@ -15,7 +15,7 @@ N      = 1 # number of variations per patient scan
 nHoles = 10000 # number of holes per scan
 nVal   = 8 # number of patient taken out of training for validation
 
-utils    = Utilities()
+utils    = DataUtils()
 gaps     = Gaps()
 debug = Debug()
 

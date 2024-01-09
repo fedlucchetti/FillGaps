@@ -22,12 +22,12 @@ from vispy.visuals.transforms import STTransform
 import pyqtgraph as pg
 from pyqtgraph import InfiniteLine
 
-from tools.utilities import Utilities
+from tools.datautils import DataUtils
 from tools.debug import Debug
 
 # from tools.ClickableIMG import ClickableImageView 
 
-utils = Utilities()
+utils = DataUtils()
 debug = Debug()
 
 # DATAPATH = "/Users/flucchetti/Documents/Connectome/Data/MRSI_reconstructed/Basic"
