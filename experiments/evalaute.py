@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import nibabel as nib
 import os, sys
 
-from tools.utilities import Utilities
+from Dev.Analytics.tools.datautils import DataUtils
 from fillgaps.proc.gaps import Gaps
 
-utils = Utilities()
+utils = DataUtils()
 gaps  = Gaps()
 
 tensor, headers = utils.load_nii_all("Qmask")

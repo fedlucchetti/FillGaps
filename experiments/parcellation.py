@@ -8,8 +8,8 @@ from nilearn import plotting
 from nilearn.datasets import fetch_atlas_basc_multiscale_2015
 from scipy.spatial.distance import pdist, squareform
 
-from tools.utilities import Utilities
-utils = Utilities()
+from Dev.Analytics.tools.datautils import DataUtils
+utils = DataUtils()
 
 
 brain_scans = list()

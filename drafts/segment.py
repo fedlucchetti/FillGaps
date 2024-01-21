@@ -11,11 +11,11 @@ from monai.inferers import sliding_window_inference
 from monai.transforms import Resize
 from vispy import app, scene
 
-from tools.utilities import Utilities
+from Dev.Analytics.tools.datautils import DataUtils
 from tools.debug import Debug
 
 debug = Debug()
-utils = Utilities()
+utils = DataUtils()
 
 
 

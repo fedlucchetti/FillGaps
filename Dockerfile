@@ -4,7 +4,7 @@ FROM tensorflow/tensorflow:latest-gpu
 RUN python3 -m pip install --upgrade pip
 
 # Define a base directory variable
-ARG BASE_DIR=/Connectome/Analytics
+ARG BASE_DIR=/Connectome/Dev/Analytics
 
 # Create directories using the base directory variable
 RUN mkdir -p $BASE_DIR/fillgaps/neuralnet \

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from tools.utilities import Utilities
+from Dev.Analytics.tools.datautils import DataUtils
 from fillgaps.proc.gaps import Gaps
 from tools.debug import Debug
 import time, os
@@ -11,7 +11,7 @@ from scipy.stats import binomtest
 N        = 5 # number of variations per patient scan
 arr_nHoles = np.array([10,50,100,500,1000,2000,5000,10000])
 arr_margin_percent = np.array([5])
-utils    = Utilities()
+utils    = DataUtils()
 gaps     = Gaps()
 debug = Debug()
 

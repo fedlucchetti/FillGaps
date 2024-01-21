@@ -9,3 +9,5 @@ PyOpenGL
 natsort
 vispy
 nilearn
+networkx
+mne

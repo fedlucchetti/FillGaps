@@ -1,0 +1,23 @@
+name: analytics_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - scipy
+  - matplotlib
+  - statsmodels
+  - pip
+  - pip:
+      - nibabel
+      - tqdm
+      - nilearn
+      - networkx
+      - mne
+      - vispy
+      - natsort
+      - statsmodels
+      - PyOpenGL
+      - PyQt5
+      - pyqtgraph 

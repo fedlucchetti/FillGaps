@@ -1,13 +1,13 @@
 
 import numpy as np
 from vispy import app, scene
-from tools.utilities import Utilities
+from Dev.Analytics.tools.datautils import DataUtils
 from tools.debug import Debug
 from vispy.color import Colormap
 
 # from tools.ClickableIMG import ClickableImageView 
 
-utils = Utilities()
+utils = DataUtils()
 debug = Debug()
 
 def create_colormap(data):
