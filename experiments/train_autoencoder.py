@@ -23,7 +23,7 @@ debug = Debug()
 # tensors_qmask          = tensors_qmask.astype(dtype=bool)
 # tensor_uniqmask        = gaps.elementwise_or(tensors_qmask)
 
-def create_dataset(tensors,nHoles):
+def create_dataset(tensors,nHoles=100):
     inputs                 = np.zeros((N,)+tensors.shape)
     labels                 = np.zeros((N,)+tensors.shape)
     mean_val = np.nanmean(tensors)
