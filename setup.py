@@ -6,7 +6,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "analytics",
+    name = "mrsinet",
     version = "1.0.0",
     description = ("Autocomplete missing voxel in reconstructed MRSI data"),
     license = "BSD",

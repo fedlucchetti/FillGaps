@@ -5,7 +5,7 @@ NUM=${1:-0}
 
 DEV_CONTAINER="analytics_dev_gpu_${NUM}"
 user="${USER}"
-user="analyticsuser"
+user="mrsinetuser"
 
 # Check if the container exists
 if [ "$(docker ps -aq -f name=^${DEV_CONTAINER}$)" ]; then
@@ -16,7 +16,7 @@ fi
 
 ## define volumes to be mounted
 ROOT=$(pwd)
-DATAPATH=$(dirname $(dirname $(pwd)))/Data
+DATAPATH=/media/flucchetti/DATA_8TB/MRSI/Mindfulteen/derivatives
 echo "DEV_ANA path set to $ROOT"
 echo "DATA path set to $DATAPATH"
 
@@ -26,8 +26,8 @@ EXPPATH=${ROOT}/experiments
 RESULTSPATH=${ROOT}/results
 
 ## define mount destination
-ROOTDESTPATH=/Connectome/Analytics
-DATADESTPATH=/Connectome/Data
+ROOTDESTPATH=/home/mrsinetuser
+DATADESTPATH=/home/mrsinetuser/data
 FILLGAPSDESTPATH=${ROOTDESTPATH}/fillgaps
 TOOLDESTPATH=${ROOTDESTPATH}/tools
 EXPDISTPATH=${ROOTDESTPATH}/experiments
@@ -47,7 +47,7 @@ docker run -itd \
   -v ${TOOLPATH}:${TOOLDESTPATH} \
   -v ${EXPPATH}:${EXPDISTPATH} \
   -v ${RESULTSPATH}:${RESULTSDISTPATH} \
-  -it analytics:latest \
+  -it mrsinet:latest \
   /bin/bash
 
 docker exec -it ${DEV_CONTAINER} pip3 install -e .

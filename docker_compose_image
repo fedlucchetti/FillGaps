@@ -1,6 +1,6 @@
 #!/bin/bash
 ## build image from dockerfile
-docker build . -t analytics
+docker build . -t mrsinet
 
 echo "###############################"
 echo "Image build successfully."

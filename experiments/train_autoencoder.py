@@ -17,7 +17,7 @@ nVal   = 8 # number of patient taken out of training for validation
 
 utils    = DataUtils()
 gaps     = Gaps()
-debug = Debug()
+debug    = Debug()
 
 # tensors_qmask, headers = utils.load_nii_all("Qmask")
 # tensors_qmask          = tensors_qmask.astype(dtype=bool)
